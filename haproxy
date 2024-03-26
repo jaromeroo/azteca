@@ -1,0 +1,146 @@
+#---------------------------------------------------------------------
+# Example configuration for a possible web application.  See the
+# full configuration options online.
+#
+#   https://www.haproxy.org/download/1.8/doc/configuration.txt
+#
+#---------------------------------------------------------------------
+
+#---------------------------------------------------------------------
+# Global settings
+#---------------------------------------------------------------------
+global
+    # to have these messages end up in /var/log/haproxy.log you will
+    # need to:
+    #
+    # 1) configure syslog to accept network log events.  This is done
+    #    by adding the '-r' option to the SYSLOGD_OPTIONS in
+    #    /etc/sysconfig/syslog
+    #
+    # 2) configure local2 events to go to the /var/log/haproxy.log
+    #   file. A line like the following can be added to
+    #   /etc/sysconfig/syslog
+    #
+    #    local2.*                       /var/log/haproxy.log
+    #
+    log         127.0.0.1 local2
+
+    chroot      /var/lib/haproxy
+    pidfile     /var/run/haproxy.pid
+    maxconn     4000
+    user        haproxy
+    group       haproxy
+    daemon
+
+    # turn on stats unix socket
+    stats socket /var/lib/haproxy/stats
+
+    # utilize system-wide crypto-policies
+    ssl-default-bind-ciphers PROFILE=SYSTEM
+    ssl-default-server-ciphers PROFILE=SYSTEM
+
+#---------------------------------------------------------------------
+# common defaults that all the 'listen' and 'backend' sections will
+# use if not designated in their block
+#---------------------------------------------------------------------
+defaults
+    mode                    http
+    log                     global
+    option                  dontlognull
+    option http-server-close
+    option                  redispatch
+    retries                 3
+    timeout http-request    10s
+    timeout queue           1m
+    timeout connect         10s
+    timeout client          1m
+    timeout server          1m
+    timeout http-keep-alive 10s
+    timeout check           10s
+    maxconn                 3000
+
+#---------------------------------------------------------------------
+# main frontend which proxys to the backends
+#---------------------------------------------------------------------
+#frontend stats
+    #bind *:8083
+    #mode http
+    #stats enable
+    #stats uri /stats
+    #stats realm HAProxy\ Statistics
+    #stats auth haproxy:TestKB
+    #bind *:1936
+    #mode            http
+    #log             global
+    #maxconn 10
+    #stats enable
+    #stats hide-version
+    #stats refresh 30s
+    #stats show-node
+    #stats show-desc Stats for prod cluster
+    #stats auth admin:prod
+    #stats uri /stats
+listen api-server-6443
+  bind *:6443
+  mode tcp
+  server fba14018 10.30.150.172:6443 check inter 1s backup
+  server fba14019 10.30.150.131:6443 check inter 1s
+  server fba14020 10.30.150.132:6443 check inter 1s
+  server fba14021 10.30.150.133:6443 check inter 1s
+listen machine-config-server-22623
+  bind *:22623
+  mode tcp
+  server fba14018 10.30.150.172:22623 check inter 1s backup
+  server fba14019 10.30.150.131:22623 check inter 1s
+  server fba14020 10.30.150.132:22623 check inter 1s
+  server fba14021 10.30.150.133:22623 check inter 1s
+listen ingress-router-443
+  bind *:443
+  mode tcp
+  balance source
+  server fba14022 10.30.150.141:443 check inter 1s
+  server fba14023 10.30.150.142:443 check inter 1s
+  server fba14024 10.30.150.143:443 check inter 1s
+  server fba14025 10.30.150.151:443 check inter 1s
+  server fba14026 10.30.150.152:443 check inter 1s
+  server fba14027 10.30.150.153:443 check inter 1s
+  server fba14028 10.30.150.154:443 check inter 1s
+  server fba14029 10.30.150.155:443 check inter 1s
+  server fba14030 10.30.150.156:443 check inter 1s
+  server fba14031 10.30.150.157:443 check inter 1s
+  server fba14032 10.30.150.158:443 check inter 1s
+  server fba14033 10.30.150.159:443 check inter 1s
+  server fba14034 10.30.150.160:443 check inter 1s
+listen ingress-router-80
+  bind *:80
+  mode tcp
+  balance source
+  server fba14022 10.30.150.141:80 check inter 1s
+  server fba14023 10.30.150.142:80 check inter 1s
+  server fba14024 10.30.150.143:80 check inter 1s
+  server fba14025 10.30.150.151:80 check inter 1s
+  server fba14026 10.30.150.152:80 check inter 1s
+  server fba14027 10.30.150.153:80 check inter 1s
+  server fba14028 10.30.150.154:80 check inter 1s
+  server fba14029 10.30.150.155:80 check inter 1s
+  server fba14030 10.30.150.156:80 check inter 1s
+  server fba14031 10.30.150.157:80 check inter 1s
+  server fba14032 10.30.150.158:80 check inter 1s
+  server fba14033 10.30.150.159:80 check inter 1s
+  server fba14034 10.30.150.160:80 check inter 1s
+#---------------------------------------------------------------------
+# static backend for serving up images, stylesheets and such
+#---------------------------------------------------------------------
+backend static
+    balance     roundrobin
+    server      static 127.0.0.1:4331 check
+
+#---------------------------------------------------------------------
+# round robin balancing between the various backends
+#---------------------------------------------------------------------
+backend app
+    balance     roundrobin
+    server  app1 127.0.0.1:5001 check
+    server  app2 127.0.0.1:5002 check
+    server  app3 127.0.0.1:5003 check
+    server  app4 127.0.0.1:5004 check
